@@ -20,11 +20,13 @@ struct image_clusterer{
     std::vector<uint8_t> gamma_corrected_image_data;
     std::vector<uint8_t> clustered_image_data;
     
+    std::vector<uint8_t> alpha_image_data;
+    
     textured_sprite original_image;
     textured_sprite modified_image;
     
     float gamma_val = 1.0f;
-    
+    bool ignore_alpha = true;
     
     size_t no_bins = 3;
     
@@ -41,6 +43,8 @@ struct image_clusterer{
     
     void decrement_gamma();
     void increment_gamma();
+    
+    void toggle_alpha();
     
     void apply_color_map(const std::vector<uint8_t>& new_colors);
     

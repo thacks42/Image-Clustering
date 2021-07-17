@@ -30,6 +30,27 @@ int main(int argc, char** argv){
     sf::Image pic;
     if(!pic.loadFromFile(argv[1])) return -1;
     
+    sf::Font font;
+    font.loadFromFile("DejaVuSansMono.ttf");
+    
+    sf::Text help_text;
+    help_text.setFont(font);
+    help_text.setString("Up -> increment bins\n"\
+                        "Down -> decrement bins\n"\
+                        "Right -> increment gamma\n"\
+                        "Left -> decrement gamma\n"\
+                        "Space -> save image\n"\
+                        "M -> apply colormap optimized for LC\n"\
+                        "A -> toggle ignore-alpha for clustering\n"\
+                        "H -> show/hide this help text");
+    
+    help_text.setCharacterSize(24);
+    help_text.setFillColor(sf::Color::White);
+    help_text.setOutlineColor(sf::Color::Black);
+    help_text.setOutlineThickness(2.0f);
+    
+    bool show_help_text = true;
+    
     image_clusterer clusterer(pic, width, height);
     
     //sf::View view = window.getDefaultView();
@@ -62,9 +83,15 @@ int main(int argc, char** argv){
                     clusterer.modified_image.tex.copyToImage().saveToFile(output_file_name);
                 }
                 
-                if(event.key.code == sf::Keyboard::Num1){
+                if(event.key.code == sf::Keyboard::M){
                     std::vector<uint8_t> colmap = {0x44, 0x71, 0xd0, 0xf6, 0xff};
                     clusterer.apply_color_map(colmap);
+                }
+                if(event.key.code == sf::Keyboard::A){
+                    clusterer.toggle_alpha();
+                }
+                if(event.key.code == sf::Keyboard::H){
+                    show_help_text = !show_help_text;
                 }
 			}
         }
@@ -72,6 +99,7 @@ int main(int argc, char** argv){
 		window.clear();
         window.draw(clusterer.original_image.spr);
         window.draw(clusterer.modified_image.spr);
+        if(show_help_text) window.draw(help_text);
         window.display();
 	}
 	

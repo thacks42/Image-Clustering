@@ -27,10 +27,15 @@ image_clusterer::image_clusterer(const sf::Image& image, size_t window_width, si
     original_image_data.resize(image_width * image_height);
     gamma_corrected_image_data.resize(image_width * image_height);
     clustered_image_data.resize(image_width * image_height);
+    alpha_image_data.resize(image_width * image_height);
     
     for(size_t i = 0; i < original_image_data.size(); i++){
-        original_image_data[i] = image.getPixelsPtr()[i * 4];
-        gamma_corrected_image_data[i] = encode_gamma(image.getPixelsPtr()[i * 4]);
+        auto pixel_color = image.getPixelsPtr()[i * 4];
+        auto pixel_alpha = image.getPixelsPtr()[i * 4 + 3] > 127 ? 255 : 0;
+        if(pixel_alpha != 255) pixel_color = 0xff;
+        original_image_data[i] = pixel_color;
+        gamma_corrected_image_data[i] = encode_gamma(pixel_color);
+        alpha_image_data[i] = pixel_alpha;
     }
     
     original_image.tex.create(pic_size.x, pic_size.y);
@@ -98,6 +103,14 @@ void image_clusterer::increment_gamma(){
     
     optimize();
     
+    update_image_data();
+}
+
+void image_clusterer::toggle_alpha(){
+    ignore_alpha = !ignore_alpha;
+    if(ignore_alpha) std::cout << "alpha values are ignored\n";
+    else std::cout << "alpha values are not ignored\n";
+    optimize();
     update_image_data();
 }
 
@@ -194,8 +207,11 @@ void image_clusterer::modify_bounds(const std::vector<float>& std_devs, std::vec
 
 void image_clusterer::optimize(){
     std::vector<uint64_t> bins(256);
-    for(auto i : gamma_corrected_image_data){
-        bins[i]++;
+    
+    for(size_t i = 0; i < gamma_corrected_image_data.size(); i++){
+        if(ignore_alpha or alpha_image_data[i] == 255){
+            bins[gamma_corrected_image_data[i]]++;
+        }
     }
     
     std::vector<size_t> borders;
