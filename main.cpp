@@ -129,9 +129,9 @@ void modify_bounds(const std::vector<float>& std_devs, std::vector<size_t>& bord
     }
 }
 
-auto optimize(const std::vector<uint8_t>& data, size_t no_bins){
+auto optimize(const std::vector<uint8_t>& image_data, size_t no_bins){
     std::vector<uint64_t> bins(256);
-    for(auto i : data){
+    for(auto i : image_data){
         bins[i]++;
     }
     
@@ -203,8 +203,35 @@ auto optimize(const std::vector<uint8_t>& data, size_t no_bins){
     return std::make_pair(LUT, all_colors);
 }
 
-std::vector<uint8_t> map_to_pallette(const std::vector<uint8_t>& colors, const std::vector<uint8_t>& image_data){
-    return {};
+std::vector<uint8_t> map_to_palette(const std::vector<uint8_t>& LUT, const std::vector<uint8_t>& original_colors, const std::vector<uint8_t>& new_colors){
+    std::vector<uint8_t> new_LUT(256);
+    if(original_colors.size() != new_colors.size()){
+        std::cout << "color map sizes do not match!\n";
+        return new_LUT;
+    }
+    if(LUT.size() != 256){
+        std::cout << "LUT size has to be 256!\n";
+        return new_LUT;
+    }
+    
+    auto get_replacement_color = [&](uint8_t orig_color){
+        for(size_t i = 0; i < original_colors.size(); i++){
+            if(original_colors[i] == orig_color) return new_colors[i];
+        }
+        return static_cast<uint8_t>(0);
+    };
+    
+    uint8_t last_color = LUT[0];
+    uint8_t last_replacement_color = get_replacement_color(last_color);
+    for(size_t i = 0; i < new_LUT.size(); i++){
+        uint8_t current_color = LUT[i];
+        if(current_color != last_color){
+            last_color = LUT[i];
+            last_replacement_color = get_replacement_color(last_color);
+        }
+        new_LUT[i] = last_replacement_color;
+    }
+    return new_LUT;
 }
 
 /*std::vector<uint8_t> hysteresis(const std::vector<uint8_t>& data,
@@ -338,10 +365,10 @@ int main(int argc, char** argv){
     
     copy_to_texture(data_new, modified.tex);
     
-	while (window.isOpen()){
+	while(window.isOpen()){
         sf::Event event;
         while (window.pollEvent(event)){
-            if (event.type == sf::Event::Closed){
+            if(event.type == sf::Event::Closed){
                 window.close();
 			}
             if(event.type == sf::Event::Resized){
@@ -358,7 +385,7 @@ int main(int argc, char** argv){
                 modified.spr.setScale(scale_factor * 0.5f, scale_factor * 0.5f);
                 modified.spr.setPosition(pic_size.x * scale_factor * 0.5f, 0.0f);
             }
-			if (event.type == sf::Event::KeyPressed){
+			if(event.type == sf::Event::KeyPressed){
 				if (event.key.code == sf::Keyboard::Up){
                     no_bins++;
                     borders = optimize(data, no_bins);
@@ -367,7 +394,7 @@ int main(int argc, char** argv){
                     }
                     copy_to_texture(data_new, modified.tex);
 				}
-                if (event.key.code == sf::Keyboard::Down){
+                if(event.key.code == sf::Keyboard::Down){
                     if(no_bins > 2){
                         no_bins--;
                         borders = optimize(data, no_bins);
@@ -377,7 +404,7 @@ int main(int argc, char** argv){
                         copy_to_texture(data_new, modified.tex);
                     }
 				}
-                if (event.key.code == sf::Keyboard::Left){
+                if(event.key.code == sf::Keyboard::Left){
                     gamma_val -= 0.05f;
                     if(gamma_val <= 0.0f) gamma_val = 0.1f;
                     std::cout << "gamma: " << gamma_val << "\n";
@@ -390,7 +417,7 @@ int main(int argc, char** argv){
                         }
                     copy_to_texture(data_new, modified.tex);
                 }
-                if (event.key.code == sf::Keyboard::Right){
+                if(event.key.code == sf::Keyboard::Right){
                     gamma_val += 0.05f;
                     std::cout << "gamma: " << gamma_val << "\n";
                     for(size_t i = 0; i < data.size(); i++){
@@ -402,9 +429,21 @@ int main(int argc, char** argv){
                         }
                     copy_to_texture(data_new, modified.tex);
                 }
-                if (event.key.code == sf::Keyboard::Space){
+                if(event.key.code == sf::Keyboard::Space){
                     modified.tex.copyToImage().saveToFile("footest123.png");
                     //write_image(data_new, borders.second, pic_size.x, pic_size.y);
+                }
+                
+                if(event.key.code == sf::Keyboard::Num1){
+                    //apply color map
+                    std::vector<uint8_t> colmap = {0x44, 0x71, 0xd0, 0xf6, 0xff}; //tried and tested values for our lasercutter (this works)
+                    if(borders.second.size() == colmap.size()){
+                        auto new_LUT = map_to_palette(borders.first, borders.second, colmap);
+                        for(size_t i = 0; i < data.size(); i++){
+                            data_new[i] = new_LUT[data[i]];
+                        }
+                        copy_to_texture(data_new, modified.tex);
+                    }
                 }
 			}
         }
