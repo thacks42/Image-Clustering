@@ -3,7 +3,7 @@ CFLAGS=-g -c -O3 -Wall -std=c++1z -march=native
 LDFLAGS=-lsfml-graphics -lsfml-window -lsfml-system
 SOURCES=main.cpp image_clusterer.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
-EXECUTABLE=prod.out
+EXECUTABLE=clusterer
 
 all: $(SOURCES) $(EXECUTABLE)
     

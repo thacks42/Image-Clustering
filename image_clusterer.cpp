@@ -326,6 +326,8 @@ std::vector<float> image_clusterer::calc_std_dev(const std::vector<size_t>& bord
     size_t no_bins = borders.size() + 1;
     std::vector<float> std_devs(no_bins);
     
+    float std_dev_sum = 0.0f;
+    
     for(size_t i = 0; i < no_bins; i++){
         float std_dev = 0.0f;
         size_t bin_min;
@@ -355,7 +357,9 @@ std::vector<float> image_clusterer::calc_std_dev(const std::vector<size_t>& bord
             std_dev = 0.0f;
         }
         std_devs[i] = std_dev;
+        std_dev_sum += std::sqrt(std_dev);
     }
+    std::cout << "sum of std_dev: " << std_dev_sum << "\n";
     return std_devs;
 }
 
